@@ -1,0 +1,94 @@
+#coding=utf-8
+
+import pytesseract
+from PIL import  Image, ImageFont, ImageDraw
+from numpy import *
+import cv2  #opencv
+import pyzbar.pyzbar as pyzbar  #条形码，二维码
+
+
+
+def doW():
+    '''
+
+    :return:
+    '''
+    # 将图片转成灰度图片
+    pil_im = Image.open('21.jpg').convert('L')
+    box = (50, 100, 800, 200)
+    im_cut = array( pil_im.crop(box) )
+    #pil_im = Image.open('1.png').convert('L')
+    im_cut = 255 * (im_cut / 255.0) ** 2
+    pil_im_c = Image.fromarray( uint8(im_cut) )
+    pil_im_c.save('2h.png')
+    print(pil_im.size)
+    text = pytesseract.image_to_string(pil_im_c, lang='eng')
+    print(type(text), str(text) )
+
+
+def doCV():
+    '''
+    opencv 练习函数
+    :return:
+    '''
+    #读取图片
+    img = cv2.imread('2.jpg')
+    #转灰度图片
+    # opencv 处理
+    grayImg = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    #cv2.imshow('gray',grayImg)
+
+    # pil 处理，并且增加对比度
+    im_g = array(Image.open('2.jpg').convert('L'))
+    im_g = 255 * (im_g / 255.0) ** 2
+    pilImg = Image.fromarray(uint8(im_g))
+    #pilImg.save('temp.jpg','jpeg')
+
+    # 使用条形码库解码
+    barcodes = pyzbar.decode(pilImg)
+    print(barcodes)
+
+    #遍历识别到的条形码
+    for barcode in barcodes:
+        #提取条形码的边界位置  画出图像中条形码的边界
+        (x,y,w,h) = barcode.rect
+        cv2.rectangle(img, (x,y), (x+w, y+h), (255,255,0), 2)
+
+        # 条形码数据为字节对象，先将它转为字符串
+        barcodeData = barcode.data.decode('utf-8')
+        # 绘出图像上条形码的数据和条形码类型
+        barcodeType = barcode.type
+
+        # 把cv2格式的图像转成PIL格式的图片，然后标注内容
+        pilImg = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+
+        # 参数（字体，默认大小）
+        font = ImageFont.truetype('STFANGSO.TTF', 70)
+        # 字体颜色
+        fillColor = (255,255,255)
+        # 文字输出位置
+        position = (x, y-25)
+        # 输出内容
+        strl = barcodeData
+
+        #创建画笔
+        draw = ImageDraw.Draw(pilImg)
+        draw.text(position, strl, font=font, fill=fillColor)
+
+        # 使用PIL保存图片
+        newName = barcodeData + '.jpg'
+        pilImg.save(newName,'jpeg')
+
+        # 打印条形码和条形码类型
+        print('扫描结果：{0} {1}'.format(barcodeType, barcodeData))
+
+
+    #cv2.waitKey(10000)
+
+    return
+
+
+
+if __name__ == '__main__':
+    #doW()
+    doCV()
